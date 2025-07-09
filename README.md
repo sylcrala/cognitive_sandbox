@@ -11,11 +11,12 @@ Each agent possesses dynamic states such as energy, activation, rhythm, and refl
 The underlying framework, a custom built particle engine, is derived from my core project A.R.I.S. (the Autonomous and Reflective Intelligent Substrate) - an emergence based intelligence currently in early-development.
 
 ## Examples
-
-<img align="center" src="demos/demo.gif" width="60%" />
 <p align="center">
-  <img src="demos/non_diagnostics_mode.png" width="50%" />
-  <img src="demos/diagnostics_mode.png" width="50%" />
+<img src="demos/demo.gif" width="60%"/>
+</p>
+<p align="center">
+  <img src="demos/non_diagnostics_mode.png" width="40%" />
+  <img src="demos/diagnostics_mode.png" width="40%" />
 </p>
 
 
