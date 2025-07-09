@@ -12,11 +12,12 @@ The underlying framework, a custom built particle engine, is derived from my cor
 
 ## Examples
 
+<img align="center" src="demos/demo.gif" width="60%" />
 <p align="center">
-  <img src="demos/non_diagnostics_mode.png" width="32%" />
-  <img src="demos/diagnostics_mode.png" width="32%" />
-  <img src="demos/demo.gif" width="32%" />
+  <img src="demos/non_diagnostics_mode.png" width="50%" />
+  <img src="demos/diagnostics_mode.png" width="50%" />
 </p>
+
 
 ## Overview 
 
