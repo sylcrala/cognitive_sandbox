@@ -15,7 +15,7 @@ from rich.live import Live
 from rich.table import Table
 from rich.layout import Layout
 from rich.align import Align
-
+from collections import Counter, deque
 import argparse
 
 MAX_FILE_SIZE = 5_000_000           # ~5MB
@@ -27,6 +27,7 @@ SIMULATED_INPUT = True
 
 ERROR_FLAG = set()
 
+rolling_reflection_window = deque(maxlen = 5)
 
 def log(message):
     # global logging method - ensuring any provided message are strings prior to feeding into the json (via sanitize())
@@ -328,14 +329,20 @@ class Particle:
         })
 
     def save_state(self):
+        # convert numpy arrays to lists if needed
+        pos = self.position.tolist() if hasattr(self.position, "tolist") else self.position
+        vel = self.velocity.tolist() if hasattr(self.velocity, "tolist") else self.velocity
+
         return {
             "id": str(self.id),
             "name": self.name,
             "type": self.type,
-            "position": self.position.tolist(),
-            "velocity": self.velocity.tolist(),
-            "activation": self.activation,
-            "energy": self.energy
+            "position": pos,
+            "velocity": vel,
+            "activation": float(self.activation),
+            "energy": float(self.energy),
+            "last_reflection": self.last_reflection,
+            "memory_bank": self.memory_bank
         }
     
 
@@ -402,9 +409,13 @@ def from_state(data):
     p.type = data["type"]
     p.position = np.array(data["position"])
     p.velocity = np.array(data["velocity"])
+    p.last_reflection = data.get("last_reflection")
     return p
 
-
+def spawn_particles(path=None, count=30):
+    if path and os.path.exists(path):
+        return load_full_state(path)
+    return [Particle() for _ in range(count)]
 
 def long_range_force(pos_a, pos_b, force_scale=0.002):
     dist = np.linalg.norm(np.array(pos_a) - np.array(pos_b))
@@ -454,6 +465,37 @@ def inspire_particles(particles):
         p.activation += random.uniform(0.05, 0.2) * p.energy
         p.last_reflection = "A spark passed through me."
         p.clamp_state()
+
+def aggregate_reflections(particles):
+    # pulls all active reflections into a list for diagnostics
+    global rolling_reflection_window
+
+    current_reflections = []
+    for p in particles:
+        for m in p.memory_bank:
+            if m.get("reflection"):
+                current_reflections.append(m["reflection"])
+
+    current_set = set(current_reflections)
+    rolling_reflection_window.append(current_set)
+
+    # flattening all previous sets in the win
+    prior_reflections = set().union(*list(rolling_reflection_window)[:-1])
+    new_reflections = current_set - prior_reflections
+
+    # top-n reflections
+    top = Counter(current_reflections).most_common(5)
+    total_reflections = len(current_reflections)
+    unique_count = len(set(current_reflections))
+    reuse_ratio = round((top[0][1] / total_reflections), 2) if total_reflections else 0
+
+    return {
+        "top_reflections": top,
+        "unique_count": unique_count,
+        "total_reflections": total_reflections,
+        "reuse_ratio": reuse_ratio,
+        "new_reflections": len(new_reflections)
+    }
 
 
 def tick(particles, tick_count, env_rhythm):
@@ -523,26 +565,24 @@ def tick(particles, tick_count, env_rhythm):
 
     if tick_count % 150 == 0:
         inspire_particles(particles)
-    """
-    if tick_count % 100 == 0:
-        for p in particles:
-            p.memory_bank.append({
-                "state": p.save_state(),
-                "timestamp": dt.datetime.now().timestamp(),
-                "persisted": False
-            })"""
-
+    
     if tick_count % 60 == 0:
         for p in particles:
             if random.random() < 0.5:
                 p.reflect(neighbors_map[p])
 
-        save_memory_state(particles)
     
     if tick_count % random.uniform(30, 400) == 0:
         for p in particles:
             if random.random() < 0.5:
                 p.random_reflection()
+
+    if tick_count % 300 == 0:
+        save_memory_state(particles)
+
+    if tick_count % 600 == 0:
+        backup_full_state(particles, tick_count)
+
         
         
 
@@ -704,11 +744,25 @@ def render_stats(particles, tick_count, env_rhythm):
     stats.add_row("Average Activation", f"{avg_activation:.2f} / {max_activation:.2f}")
 
     return Panel(stats)
-"""
-def render_error_viewer(tick_count):
 
-    error_stream = Table(title = "Recent Errors", expand = True)
-"""
+def render_reflection_analysis(particles):
+    data = aggregate_reflections(particles)
+
+    reflections = Table(title = "Top Reflection", expand = True)
+    reflections.add_column("Reflection", overflow="fold")
+    reflections.add_column("Count", justify="right")
+
+    top_n = 1 if console.size.height < 100 else 2
+    for phrase, count in data["top_reflections"][:top_n]:
+        reflections.add_row(phrase, str(count))
+
+    summary = Table.grid(padding = 1)
+    summary.add_row("Unique Reflections", str(data["unique_count"]))
+    summary.add_row("Total Reflections",  str(data["total_reflections"]))
+    summary.add_row("New", str(data["new_reflections"]))
+    summary.add_row("Reuse Ratio", f"{data['reuse_ratio']:.2f}")
+
+    return Panel(Group(reflections, summary), title="Reflection Statistics")
 
 def render_inspector(particles):
     # particle inspector render method
@@ -731,7 +785,7 @@ def render_environment_diagnostics(particles, env_rhythm):
 
     in_sync = sum(abs(p.position[6] - env_rhythm) < 0.2 for p in particles)
     out_sync = len(particles) - in_sync
-    diag = Table(title = "Environment Sync", expand = True)
+    diag = Table(title = "Environment Sync", expand = False)
     diag.add_column("Metric")
     diag.add_column("Value")
     diag.add_row("Environmental Rhythm", f"{env_rhythm:.2f}")
@@ -747,18 +801,20 @@ def render_panel(particles, tick_count, camera_offset, env_rhythm, diagnostics):
     stats = render_stats(particles, tick_count, env_rhythm)
     particle_inspector = render_inspector(particles)
     env_inspector = render_environment_diagnostics(particles, env_rhythm)
+    reflection_stats = render_reflection_analysis(particles)
     
 
     if diagnostics == True:
         layout = Layout(name = "main")
         layout["main"].split_row(
-            Layout(name = "info", size=35),
+            Layout(name = "info", size=30),
             Layout(Panel(grid_str, title = "Environment Visualizer", highlight = True, subtitle="For equity and autonomy", padding = (1,1))),
-            Layout(name = "diagnostics", size=35),
+            Layout(name = "diagnostics", size=40),
         )
         layout["diagnostics"].split_column(
             Layout(stats),
-            Layout(env_inspector)
+            Layout(env_inspector),
+            Layout(reflection_stats)
         )
         layout["info"].split_column(
             Layout(legend),
@@ -797,6 +853,21 @@ def inject_event(particles):
 # ─────────────────────────────────────────────
 # SECTION 6: Memory system
 # ─────────────────────────────────────────────
+
+def backup_full_state(particles, tick_count, dir_path="./backups/"):
+    os.makedirs(dir_path, exist_ok=True)
+    state = [p.save_state() for p in particles]
+
+    filename = f"backup_tick_{tick_count}_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    path = os.path.join(dir_path, filename)
+
+    with open(path, "w") as f:
+        json.dump(state, f, indent=2)
+
+def load_full_state(path):
+    with open(path, "r") as f:
+        data = json.load(f)
+    return [Particle.from_state(p) for p in data]
 
 def save_memory_state(particles, base_dir=MEMORY_DIR):
     os.makedirs(base_dir, exist_ok=True)
@@ -872,9 +943,13 @@ def main(particle_count = None, diagnostics = False, delay = 0.1, max_ticks = No
         "timestamp": dt.datetime.now().timestamp()
     })
 
-    count = particle_count
+    save_path = "/state/last_run.json"
 
-    particles = [Particle() for _ in range(count)]
+    particles = spawn_particles(
+        path = save_path if not args.norestore else None,
+        count = args.particles
+    )
+
     tick_count = 0
     camera_offset = np.zeros(2)  # For X/Y
     prev_size = console.size
@@ -917,6 +992,7 @@ if __name__ == "__main__":
     parser.add_argument("--diagnostics", action="store_true", help="Enable diagnostics panel")
     parser.add_argument("--delay", type=float, default=0.1, help="Delay between ticks in seconds")
     parser.add_argument("--ticks", type=int, default=None, help="Maximum number of ticks to run")
+    parser.add_argument("--norestore", action="store_true", help="Skips loading last state; otherwise persistence is enabled by default")
 
     args = parser.parse_args()
 
