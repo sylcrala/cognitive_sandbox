@@ -18,19 +18,18 @@ The underlying framework, a custom built particle engine, is derived from my cor
 - Particle clustering, interaction forces, and symbolic "emotion"
 - Persistent memory between sessions
 - Color-coded particle types with varying behavior patterns
-- Modular engine foundation based on ARIS
+- Modular engine foundation based on A.R.I.S.
 
 ## Deployment
 
 This demo is designed for local deployment only at the moment; please see steps below
 
+
 #### Requirements
  - Python 3.8+
- - Some external modules (see requirements.txt):
+ - Two external modules (see requirements.txt):
     - rich
     - numpy
-    - uuid
-    - datetime
 
 
 #### Arguments
@@ -51,21 +50,6 @@ You're able to customize your runtime via argparse:
 
   python path/to/dir/main.py --args
 ```
-
-
-## FAQ
-
-#### What are these dots on my screen?
-
-You're seeing independent digital "entities" - particles - interacting with each other in real time. They each have their own energy, mood, rhythm, and memory; all affecting how they behave and interact.
-
-#### Do they maintain their memory past sessions?
-
-Yes they do!! Memories are designed to persist between runs, and the overall memory bank per particle (yes, they each have their own) is stored in the "./memory/" directory.
-
-#### Is this real AI?
-
-No, not yet — but it’s built on the early layers of a reflective, emergent system (ARIS). The goal is to simulate synthetic emotion, adaptation, and social cohesion.
 
 
 ## Screenshots
