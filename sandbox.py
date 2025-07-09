@@ -138,24 +138,20 @@ class Particle:
         if self.activation < 0.001:
             self.alive = False
 
-        # base decay rate
-        energy_decay = 0.975
-        activation_decay = 0.98
-
-        # slowing decay if near neighbors
-        if neighbors:
-            activation_decay = 0.995
-
-        # speeding up decay if not near neighbors
-        if not neighbors:
-            energy_decay = 0.955
-
         # valence influence
         valence = self.position[8]
         valence_norm = (valence + 1) / 2
 
+        base_decay = 0.98
+        valence_adjust = max(0.9, 1 - 0.05 * valence_norm)
+        energy_decay = base_decay * valence_adjust
+        activation_decay = 0.98
+
         # positive valence boosts energy recovery slightly
         energy_decay *= (1 - 0.1 * valence_norm)
+
+        #clamping decay
+        energy_decay = max(energy_decay, 0.95)
 
         # negative valence accelerates activation decay
         if valence < 0:
@@ -167,13 +163,17 @@ class Particle:
 
 
         if vitality > 0.8:
-            gain = (vitality - 0.8) * 0.2 * self.energy
+            gain = min((vitality - 0.8), 0.5) * 0.2 * self.energy
             self.activation += gain
             self.energy -= gain * 0.1
         
-        self.energy += 0.002 
+        rhythm_align = 1.0 - abs(self.position[6] - env_rhythm)  # in [0, 1]
+        valence_norm = (self.position[8] + 1) / 2  # in [0, 1]
 
-        self.clamp_state
+        regen = 0.00325 + (0.0035 * rhythm_align) + (0.0045 * valence_norm)
+        self.energy += regen
+
+        self.clamp_state()
 
     #adjust particle behavior
     def adjust_behavior(self, neighbors, particle_context):
@@ -188,7 +188,7 @@ class Particle:
         for p in particle_context["all_particles"]:
             weight = 1 / (1 + p.position[3])
 
-        noise = np.random.normal(0, 0.02, 11)
+        noise = np.random.normal(0, 0.01, 11)
         drift_force = [(temporal_anchor[i] - self.position[i]) * 0.01 + noise[i] for i in range(11)]
         repulsion_force = np.zeros(11)
 
@@ -225,10 +225,11 @@ class Particle:
                     continue
                 
                 # energy diffusion
-                energy_diff = np.clip((self.energy - neighbor.energy) * 0.05, -0.01, 0.01)
+                if self.energy > neighbor.energy:
+                    energy_diff = np.clip((self.energy - neighbor.energy) * 0.025, 0, 0.007)
+                    self.energy -= energy_diff
+                    neighbor.energy += energy_diff
 
-                self.energy -= energy_diff
-                neighbor.energy += energy_diff
 
             group_energy = sum(n.energy for n in neighbors)
             extra = group_energy / 100
@@ -246,7 +247,7 @@ class Particle:
 
     def clamp_state(self):
         # assigns value clamping between 0.0 and 1.0 to prevent unbound results
-        self.energy = min(max(self.energy, 0.0), 1.2)
+        self.energy = min(max(self.energy, 0.0), 1.03) # slight over-limit allocation for energy
         self.activation = min(max(self.activation, 0.0), 1.0)
 
 
@@ -257,7 +258,7 @@ class Particle:
         rhythm_bonus = max(0.75, 1.25 - rhythm_diff * 1.2)
 
         vitality = base * rhythm_bonus
-        return min(vitality, 1.0)
+        return vitality
 
     def distance_to(self, other):
         return math.sqrt(sum(
@@ -425,7 +426,12 @@ class Particle:
         for i in range(string_len):
             chars.append(rnd.choice(consonants if i % 2 == 0 else vowels))
 
-        self.energy = max(self.energy - (string_len * 0.035), 0.0)
+        valence = self.position[8]
+        valence_norm = (valence + 1) / 2
+        cost = 0.015 + 0.02 * (string_len / 20) ** 1.5
+        cost *= (1 - 0.1 * valence_norm)  # more expressive for positive valence
+        self.energy = max(self.energy - cost, 0.0)
+
         return "".join(chars).capitalize()
 
 
