@@ -10,6 +10,14 @@ Each agent possesses dynamic states such as energy, activation, rhythm, and refl
 
 The underlying framework, a custom built particle engine, is derived from my core project A.R.I.S. (the Autonomous and Reflective Intelligent Substrate) - an emergence based intelligence currently in early-development.
 
+## Examples
+
+<p align="center">
+  <img src="demos/non_diagnostics_mode.png" width="32%" />
+  <img src="demos/diagnostics_mode.png" width="32%" />
+  <img src="demos/demo.gif" width="32%" />
+</p>
+
 ## Overview 
 
 ### Core Features
@@ -88,13 +96,6 @@ All arguments are optional, and if omitted, will be replaced by their default va
 
   python sandbox.py --args
 ```
-
-
-## Screenshots
-
-![Example runtime](screenshots/non_diag_mode.png)
-![Diagnostics Mode](screenshots/diagnostics_mode.png)
-
 
 ## How to support development :)
 
