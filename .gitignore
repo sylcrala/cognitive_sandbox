@@ -5,4 +5,4 @@ __pycache__/
 *.log
 *.json
 *.bak
-/memory_old/
+/memory_old/demos/demo.gif
