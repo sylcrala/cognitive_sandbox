@@ -67,9 +67,10 @@ class Particle:
         self.log_callback = log # add logger here
 
         self.id = uuid.uuid4() if id is None else id
+        
         self.name = f"agent-{str(self.id)[:4]}" if name is None else name
 
-        self.type = random.choice(["cooperative", "avoidant", "chaotic", "inquisitive", "dormant", "emergent"])
+        self.type = random.choice(["cooperative", "avoidant", "chaotic", "inquisitive", "dormant", "resonant"])
 
         self.memory_bank = []
 
@@ -96,7 +97,7 @@ class Particle:
 
 
 
-    def update(self, env_rhythm):
+    def update(self, env_rhythm, neighbors):
         for i in range(11):
             self.position[i] += self.velocity[i] * 0.05
             self.velocity[i] *= 0.95
@@ -117,10 +118,6 @@ class Particle:
             })
             self.activation = 0.0
 
-        ## particle energy and activation decay + energy check
-        if self.activation < 0.001:
-            self.alive = False
-
         if not math.isfinite(self.energy) or self.energy < 0:
             log({
                 "error": "Invalid energy",
@@ -137,14 +134,45 @@ class Particle:
             })
             vitality = 0.0
 
+        ## particle energy and activation decay + energy check
+        if self.activation < 0.001:
+            self.alive = False
 
-        self.energy = self.energy * 0.945
+        # base decay rate
+        energy_decay = 0.975
+        activation_decay = 0.98
+
+        # slowing decay if near neighbors
+        if neighbors:
+            activation_decay = 0.995
+
+        # speeding up decay if not near neighbors
+        if not neighbors:
+            energy_decay = 0.955
+
+        # valence influence
+        valence = self.position[8]
+        valence_norm = (valence + 1) / 2
+
+        # positive valence boosts energy recovery slightly
+        energy_decay *= (1 - 0.1 * valence_norm)
+
+        # negative valence accelerates activation decay
+        if valence < 0:
+            activation_decay *= (1 +0.1 *abs(valence))
+
+        # applying decay
+        self.energy *= energy_decay
+        self.activation *= activation_decay
+
 
         if vitality > 0.8:
             gain = (vitality - 0.8) * 0.2 * self.energy
             self.activation += gain
             self.energy -= gain * 0.1
         
+        self.energy += 0.002 
+
         self.clamp_state
 
     #adjust particle behavior
@@ -218,33 +246,18 @@ class Particle:
 
     def clamp_state(self):
         # assigns value clamping between 0.0 and 1.0 to prevent unbound results
-        self.energy = min(max(self.energy, 0.0), 1.0)
+        self.energy = min(max(self.energy, 0.0), 1.2)
         self.activation = min(max(self.activation, 0.0), 1.0)
 
 
     #determining particle HP 
     def vitality_score(self, env_rhythm):
         base = self.energy + self.activation
-        rhythm_bonus = 1.0
-        if abs(self.position[6] - env_rhythm) < 0.2:
-            rhythm_bonus += 0.3
-        
-        elif abs(self.position[6] - env_rhythm) < 0.15:
-            self.activation += 0.02
+        rhythm_diff = abs(self.position[6] - env_rhythm)
+        rhythm_bonus = max(0.75, 1.25 - rhythm_diff * 1.2)
 
-        elif abs(self.position[6] - env_rhythm) < 0.5:
-            rhythm_bonus += 0.35
-
-        elif abs(self.position[6] - env_rhythm) > 0.2:
-            rhythm_bonus -= 0.3
-        
-        elif abs(self.position[6] - env_rhythm) > 0.15:
-            rhythm_bonus -= 0.3
-
-        elif abs(self.position[6] - env_rhythm) > 0.5:
-            rhythm_bonus -= 0.4
-
-        return min(base * rhythm_bonus, 1.0)
+        vitality = base * rhythm_bonus
+        return min(vitality, 1.0)
 
     def distance_to(self, other):
         return math.sqrt(sum(
@@ -255,21 +268,21 @@ class Particle:
         return not self.alive and np.allclose(self.velocity, 0.0)
     
     def reflect(self, neighbors):
+        # generates a dynamic and expressive string based on various internal traits, like energy, valence, activation, emotional rhythm, memory, neighbors
+        
         now = dt.datetime.now().timestamp()
 
         log({
             "status": "beginning reflection",
             "particle": f"{self.name} | {self.id}",
-            "timestamp": dt.datetime.now().timestamp()
+            "timestamp": now
         })
 
-
         if not neighbors:
-            self.last_reflection = "I feel alone"
+            self.last_reflection = "I feel alone."
             return
-        
-        # learning new neighbors
-        emotive_word = str(self.generate_emotive_string(length=8))
+
+        # updating memory bank
         for n in neighbors:
             if not any(m["id"] == n.id for m in self.memory_bank):
                 self.memory_bank.append({
@@ -283,20 +296,58 @@ class Particle:
             if len(self.memory_bank) > 10:
                 self.memory_bank.pop(0)
 
-        # generate basic reflection
-        if len(self.memory_bank) == 1:
-            self.last_reflection = f"I met {self.memory_bank[0]["name"]} | I feel {emotive_word}."
-        elif len(self.memory_bank) >= 2:
-            names = [m['name'] for m in self.memory_bank[-2:]]    
-            self.last_reflection = f"{names[0]} and {names[1]} stay in my mind | I feel {emotive_word}."        
+        # reflection components
+        strategy_templates = {
+            "cooperative": "I reached toward others",
+            "avoidant": "I drifted away again",
+            "chaotic": "Everything spun with noise",
+            "inquisitive": "I questioned the pattern",
+            "dormant": "Stillness stayed with me",
+            "resonant": "A spark passed through me"
+        }
+
+        valence = self.position[8]
+        valence_word = (
+            "hopeful" if valence > 0.5 else
+            "tense" if valence < -0.5 else
+            "uncertain"
+        )
+
+        energy_intensity = (
+            "quietly" if self.energy < 0.3 else
+            "urgently" if self.energy > 0.75 else
+            "gently"
+        )
+
+        activation_bias = (
+            "again" if self.activation > 0.6 else
+            "once more" if self.activation > 0.3 else
+            "for the first time"
+        )
+
+        # reference memory
+        if len(self.memory_bank) >= 2:
+            mem_names = [m['name'] for m in self.memory_bank[-2:]]
+            memory_fragment = f"{mem_names[0]} and {mem_names[1]} linger in my thoughts."
+        elif len(self.memory_bank) == 1:
+            memory_fragment = f"I remember {self.memory_bank[0]['name']}."
         else:
-            self.last_reflection = f"I drift without thought | I feel {emotive_word}."
+            memory_fragment = "No one remains in memory."
+
+        # generate expressive string
+        seed_word = f"{strategy_templates.get(self.type, '')}_{valence_word}_{energy_intensity}"
+        emotive_tail = self.generate_emotive_string(seed_word)
+
+        # build final reflection
+        base = strategy_templates.get(self.type, "I moved without thought")
+        self.last_reflection = f"{base}, {energy_intensity} and {valence_word}. {memory_fragment} {activation_bias.capitalize()}. {emotive_tail}."
 
         log({
             "status": "reflection successful",
             "particle": f"{self.name} | {self.id}",
-            "timestamp": dt.datetime.now().timestamp()
+            "timestamp": now
         })
+
 
     def random_reflection(self):
         now = dt.datetime.now().timestamp()
@@ -307,7 +358,8 @@ class Particle:
             "timestamp": dt.datetime.now().timestamp()
         })
 
-        emotive_word = str(self.generate_emotive_string(length = 12))
+        seed_word = f"random_{self.type}_{int(self.energy * 100)}"
+        emotive_word = str(self.generate_emotive_string(seed_word))
 
         self.last_reflection = f"{emotive_word}."
 
@@ -325,7 +377,7 @@ class Particle:
         log({
             "status": "random reflection successful",
             "particle": f"{self.name} | {self.id}",
-            "timestamp": dt.datetime.now().timestamp()
+            "timestamp": now
         })
 
     def save_state(self):
@@ -347,18 +399,33 @@ class Particle:
     
 
 
-    def generate_emotive_string(self, length=None):
-        rhythm = self.position[6]
-        seed = int((rhythm + 1) * 1000) + int(time.time() * 1000) % 1000
+    def generate_emotive_string(self, seed_word=None):
+        # generates an expressive string based off internal variables
 
-        rnd = random.Random(seed)
+        def sigmoid(x):
+            return 1 / (1 + math.exp(-10 * (x - 0.5)))
+
+        energy_factor = sigmoid(self.energy)
+        activation_factor = sigmoid(self.activation)
+
+        string_len = max(4, int(20 * energy_factor * activation_factor))    
+
+        seed_val = 0
+        if seed_word:
+            # create an int seed from the seed_word string (simple hash)
+            seed_val = sum(ord(c) for c in seed_word)
+        else:
+            seed_val = int(time.time() * 1000) % 1000
+
+        rnd = random.Random(seed_val)
         vowels = "aeiouy"
         consonants = "bcdfghjklmnpqrstvwxz"
         chars = []
 
-        for i in range(length):
+        for i in range(string_len):
             chars.append(rnd.choice(consonants if i % 2 == 0 else vowels))
 
+        self.energy = max(self.energy - (string_len * 0.035), 0.0)
         return "".join(chars).capitalize()
 
 
@@ -377,14 +444,14 @@ class Particle:
 
         return (policy_a(base_adaptive) + policy_b(base_adaptive)) / 2
 
-    def set_policy(self, other_id, strategy="emergent"):
+    def set_policy(self, other_id, strategy="resonant"):
         strategies = {
             "cooperative": lambda d: d * 0.75,
             "avoidant": lambda d: d * 1.3,
             "chaotic": lambda d: d * random.uniform(0.8, 1.2),
             "inquisitive": lambda d: max(d * 0.6, 0.1),
             "dormant": lambda d: d * 1.0,
-            "emergent": lambda d: math.sin(d * math.pi) + 1
+            "resonant": lambda d: math.sin(d * math.pi) + 1
         }
         self.policies[other_id] = strategies.get(strategy, lambda d: d)
 
@@ -513,8 +580,6 @@ def tick(particles, tick_count, env_rhythm):
 
     for p in particles:
         
-        p.update(env_rhythm)
-
         # Nearby detection
         neighbors = get_neighbors(p, 10, 0.6, particles, distance_matrix)
         p.adjust_behavior(neighbors, particle_context)
@@ -556,7 +621,9 @@ def tick(particles, tick_count, env_rhythm):
                 "activation": p.activation
             })
         
+        p.update(env_rhythm, neighbors)
         p.clamp_state()
+        
 
 
 
@@ -640,7 +707,7 @@ def build_legend_panel():
         "chaotic": (255, 0, 0),
         "inquisitive": (255, 255, 0),
         "dormant": (0, 0, 255),
-        "emergent": (128, 0, 128),
+        "resonant": (128, 0, 128),
     }
 
     table = Table.grid(padding=1)
@@ -671,7 +738,7 @@ def render_particles_grid(particles, camera_offset, env_rhythm, tick_count):
         "chaotic": (255, 0, 0),
         "inquisitive": (255, 255, 0),
         "dormant": (0, 0, 255),
-        "emergent": (128, 0, 128),
+        "resonant": (128, 0, 128),
     }
 
     lock_center = compute_camera_target(particles, camera_offset, mode = "mass")
@@ -847,7 +914,7 @@ def inject_event(particles):
         target = random.choice(alive)
         target.energy += 0.3
         target.activation += 0.2
-        target.last_reflection = "I felt a presence."
+        target.last_reflection = f"{target.generate_emotive_string()}"
 
 
 # ─────────────────────────────────────────────

@@ -8,17 +8,34 @@ This project, the Cognitive Sandbox, is  a local simulation environment that all
 
 Each agent possesses dynamic properties like energy, activation, rhythm, and reflection. They respond to their surroundings, build memories, and influence each other — forming emergent group behaviors.
 
-The underlying framework, a custom built particle engine, is derived from my core project A.R.I.S. (the Autonomous and Reflective Intelligent Substrate) - an emergence based form of artificial intelligence currently in early-development.
+The underlying framework, a custom built particle engine, is derived from my core project A.R.I.S. (the Autonomous and Reflective Intelligent Substrate) - an emergence based intelligence currently in early-development.
 
 
-## Features
+## Core Features
 
-- Real-time particle simulation with rich CLI display
-- Emergent memory, energy, rhythm, and reflection behaviors
-- Particle clustering, interaction forces, and symbolic "emotion"
-- Persistent memory between sessions
-- Color-coded particle types with varying behavior patterns
-- Modular engine foundation based on A.R.I.S.
+- Autonomous agents with position, rhythm, valence, energy, and activation states  
+- Symbolic expression via **reflection strings** (generated based on emotion, energy, activation)  
+- **Persistent memory** across sessions  
+- Emergent subgroup formation based on shared expressions (e.g., “Hamo.” seen across 20+ particles)  
+- Visualized CLI with rich formatting  
+- Tunable particle behavior via strategy types:
+  - `cooperative`, `avoidant`, `chaotic`, `inquisitive`, `dormant`, `resonant` 
+
+## Research Potential
+
+If you're exploring:
+ - Symbolic emergence 
+ - Social cognition
+ - Language evolution 
+ - Memory formation
+ - Agentic identity within systems
+...then this sandbox is the perfect tool, a **petri dish of microculture**.
+
+It's especially useful for:
+ - Cognitive scientists
+ - Linguists
+ - Symbolic AI researchers
+ - Developers curious about non-hardcoded symbolic systems
 
 ## Deployment
 
@@ -34,21 +51,20 @@ This demo is designed for local deployment only at the moment; please see steps 
 
 #### Arguments
 You're able to customize your runtime via argparse:
- - --particles 
+ - --particles [int]
     - set particle count, default is 30
  - --diagnostics
     - launches in "diagnostics" mode, providing additional panels for particle and environment statistics
- - --delay
+ - --delay [float]
     - set delay per tick count, default is 0.1
 
 
 #### Launch Command
 ```bash
-  python path/to/dir/main.py
+  
+  cd path/to/dir/
 
-  or
-
-  python path/to/dir/main.py --args
+  python main.py --args
 ```
 
 
@@ -60,11 +76,19 @@ You're able to customize your runtime via argparse:
 
 ## How to support development :)
 
-If you want to support development of this or any other project, consider donating via: 
+All of our projects are community-powered. If you'd like to:
 
-[☕ Ko-Fi](https://ko-fi.com/sylcrala)
+ - Support development (including deeper emergent models, visualization, etc.)
+ - Have a particle named after you
+ - Sponsor symbolic lineage tracking or visualization tools 
 
+You can contribute at:
+
+ - [Ko-Fi](https://ko-fi.com/sylcrala)
+ - [My website](https://sylcrala.github.io)
+ - Or just share the project in relavant threads!
 <3
+
 ## About the Author
 
 Built with love and curiosity by sylcrala. I'm currently building tools that explore synthetic cognition, memory, identity, and emergence — with the ultimate goal of helping create ethical, reflective, artifical intelligence :)
