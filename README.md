@@ -34,7 +34,7 @@ The underlying framework, a custom built particle engine, is derived from my cor
 
 ### The Agents
 
-Each `Agent` operates in a **6-dimensional cognitive-emotional space**, reduced from the original 11D design for greater interpretability and long-term stability. What you see in the sandbox are 2D projections of their 6D positioning.
+Each `Agent` operates in a **6-dimensional cognitive-emotional space**, reduced from the original 11D design for greater interpretability and long-term stability. What you see in the sandbox are 2D projections of their 6D positioning. Age is derived from w, the birth time, so it's not considered it's own independent dimension.
 
 #### Key Dimensions:
 
