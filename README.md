@@ -1,5 +1,6 @@
 # The Cognitive Sandbox
-### A real-time local simulation where autonomous particles interact, remember, and reflect. Built from the foundations of the A.R.I.S. engine.
+### A real-time local simulation where autonomous particles interact, remember, and reflect. 
+_Built from the foundations of the A.R.I.S. engine._
 
 
 First and foremost, thank you so much for checking out this project; my first public release :)
@@ -8,7 +9,7 @@ This project, the Cognitive Sandbox, is a local simulation environment that allo
 
 Each agent possesses dynamic states such as energy, activation, rhythm, and reflection. They respond to their surroundings, build memories, and influence each other — forming emergent group behaviors.
 
-The underlying framework, a custom built particle engine, is derived from my core project A.R.I.S. (the Autonomous and Reflective Intelligent Substrate) - an emergence based intelligence currently in early-development.
+The underlying framework, a custom built particle engine, is derived from my core project A.R.I.S. (the Autonomous and Reflective Intelligent Substrate) - an early-stage emergence-based intelligence.
 
 ## Examples
 <p align="center">
@@ -34,7 +35,7 @@ The underlying framework, a custom built particle engine, is derived from my cor
 
 ### The Agents
 
-Each `Agent` operates in a **6-dimensional cognitive-emotional space**, reduced from the original 11D design for greater interpretability and long-term stability. What you see in the sandbox are 2D projections of their 6D positioning. Age is derived from w, the birth time, so it's not considered it's own independent dimension.
+Each `Agent` operates in a **6-dimensional cognitive-emotional space**, reduced from the original 11D design for greater interpretability and long-term stability. What you see in the sandbox are 2D projections of their 6D positioning. Note: `age` is derived from `w` (birth time) and is not considered its own independent dimension.
 
 #### Key Dimensions:
 
@@ -52,18 +53,15 @@ Each `Agent` operates in a **6-dimensional cognitive-emotional space**, reduced 
 
 ### Research Potential
 
-If you're exploring:
+If you're curious about or exploring...
+
  - Symbolic emergence 
  - Social cognition
  - Language evolution 
  - Memory formation
-...then this sandbox is the perfect tool, a **petri dish of microculture**.
 
-It's especially useful for:
- - Cognitive scientists
- - Linguists
- - Symbolic AI researchers
- - Developers curious about non-hardcoded symbolic systems
+...then this sandbox might offer a unique environment; a **petri dish of microculture** in a way.
+
 
 ## How to deploy
 
@@ -113,6 +111,8 @@ You can contribute at:
  - [My website](https://sylcrala.github.io)
  - Or just share the project in relevant threads!
 <3
+
+See [LICENSE](LICENSE) for more information on reuse and contribution.
 
 ## About the Author
 
