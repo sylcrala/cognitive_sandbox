@@ -9,7 +9,7 @@ This project, the Cognitive Sandbox, is a local simulation environment that allo
 
 Each agent possesses dynamic states such as energy, activation, rhythm, and reflection. They respond to their surroundings, build memories, and influence each other — forming emergent group behaviors.
 
-The underlying framework, a custom built particle engine, is derived from my core project A.R.I.S. (the Autonomous and Reflective Intelligent Substrate) - an early-stage emergence-based intelligence.
+The underlying framework, a custom built particle engine, is derived as a simplified version of the engine from my core project A.R.I.S. (the Autonomous and Reflective Intelligent Substrate) - an early-stage emergence-based intelligence.
 
 ## Examples
 <p align="center">
