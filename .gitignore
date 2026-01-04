@@ -1,8 +1,13 @@
 __pycache__/
 *.pyc
-/logs/
-/memory/
+/.vscode/
+/.venv/
+/archive/
+/main/logs/
+/main/memories/
 *.log
 *.json
 *.bak
 /memory_old/demos/demo.gif
+.DS_Store
+**/.DS_Store
